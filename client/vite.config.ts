@@ -12,14 +12,13 @@ export default defineConfig({
   },
   server: {
     port: 3000,
-    host: true, // Expose to all network interfaces
+    host: true,
     proxy: {
       "/api": {
-        target: "http://localhost:3001/",
+        target: "https://sky-scanner-backend.vercel.app/",
         changeOrigin: true,
-        secure: false,
-        // Rewrite path if needed
-        // rewrite: (path) => path.replace(/^\/api/, '')
+        secure: true,
+        // rewrite: (path) => path.replace(/^\/api/, ""),
       },
     },
   },

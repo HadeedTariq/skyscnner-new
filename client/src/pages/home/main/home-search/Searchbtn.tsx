@@ -4,11 +4,13 @@ import { Search } from "lucide-react";
 interface SearchButtonProps {
   isLoading: boolean;
   className?: string;
+  aria_label: string;
 }
 
 export const SearchButton = ({
   isLoading,
   className = "bg-light-blue text-white w-full py-8 rounded-2xl hover:bg-light-blue/90 transition-colors flex items-center justify-center gap-2",
+  aria_label,
 }: SearchButtonProps) => (
   <Button
     type="submit"
@@ -21,7 +23,7 @@ export const SearchButton = ({
     ) : (
       <>
         <Search className="h-5 w-5" />
-        <span>Search </span>
+        <span>{aria_label}</span>
       </>
     )}
   </Button>

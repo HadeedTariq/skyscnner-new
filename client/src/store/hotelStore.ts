@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import axios from "@/api/axios";
 import { create } from "zustand";
-import axios from "axios";
 
 export interface HotelData {
   hotelName: string;
@@ -50,7 +50,7 @@ export const useHotelStore = create<HotelState>((set) => ({
       const response = await axios.post<{
         success: boolean;
         data: HotelData[];
-      }>("/api/booking/hotel/unified-details", payload);
+      }>("/booking/hotel/unified-details", payload);
 
       console.log("Hotel data fetched successfully:", response.data);
 

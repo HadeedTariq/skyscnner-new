@@ -20,9 +20,7 @@ const FlightCardSkeleton = () => (
       <div className="flex-1 space-y-4 w-full">
         <div className="flex justify-between items-center">
           <Skeleton className="h-6   bg-slate-400/20   w-24 rounded" />{" "}
-          {/* Airline Tag */}
           <Skeleton className="h-4   bg-slate-400/20   w-16 rounded" />{" "}
-          {/* Cabin Class */}
         </div>
         <div className="flex items-center gap-4">
           <div className="space-y-1.5 flex-1">
@@ -111,7 +109,6 @@ const FlightResultsDisplay = () => {
   }
 
   if (!loading && allFetchedFlights.length === 0 && !error) {
-    // If not loading, no error, but no flights ever fetched
     return (
       <Card className="flex flex-col items-center justify-center text-center p-10 bg-white rounded-xl shadow-lg h-96">
         <PlaneTakeoff className="w-16 h-16 text-slate-400 mb-5" />

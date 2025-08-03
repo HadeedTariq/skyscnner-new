@@ -5,6 +5,8 @@ export interface FlightOptionsProps {
   directOnly: boolean;
   onToggleNearby: (checked: boolean) => void;
   onToggleDirect: (checked: boolean) => void;
+  directFlightsOnlyText: string;
+  nearbyAirportsText: string;
 }
 
 export function FlightOptions({
@@ -12,6 +14,8 @@ export function FlightOptions({
   directOnly,
   onToggleNearby,
   onToggleDirect,
+  directFlightsOnlyText,
+  nearbyAirportsText,
 }: FlightOptionsProps) {
   const itemVariants = {
     hidden: { opacity: 0 },
@@ -34,7 +38,7 @@ export function FlightOptions({
           onChange={(e) => onToggleNearby(e.target.checked)}
         />
         <label htmlFor="nearbyAirports" className="text-sm cursor-pointer">
-          Include nearby airports
+          {nearbyAirportsText}
         </label>
       </motion.div>
       <motion.div className="flex items-center" whileHover={{ scale: 1.02 }}>
@@ -46,7 +50,7 @@ export function FlightOptions({
           onChange={(e) => onToggleDirect(e.target.checked)}
         />
         <label htmlFor="directFlightsOnly" className="text-sm cursor-pointer">
-          Direct flights only
+          {directFlightsOnlyText}
         </label>
       </motion.div>
     </motion.div>

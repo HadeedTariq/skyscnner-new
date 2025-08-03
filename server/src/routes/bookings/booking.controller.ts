@@ -63,33 +63,49 @@ const getFlightDetails = async (
     }
 
     const mappedFlights = response.data.map((offer: any) => {
-      const itinerary = offer.itineraries[0];
-      const segment = itinerary.segments[0];
-      const lastSegment = itinerary.segments[itinerary.segments.length - 1];
-      const traveler = offer.travelerPricings[0];
+      const itinerary = offer.itineraries?.[0] ?? null;
+      const segments = itinerary?.segments ?? [];
+      const firstSegment = segments[0] ?? null;
+      const lastSegment = segments[segments.length - 1] ?? null;
+      const traveler = offer.travelerPricings?.[0] ?? null;
+      const fareSegment = traveler?.fareDetailsBySegment?.[0] ?? null;
 
-      const formattedArrivalTime = DateTime.fromISO(lastSegment.arrival.at, {
-        zone: userTimezone,
-      }).toFormat("cccc, dd LLL yyyy, hh:mm a");
+      const formattedArrivalTime = lastSegment?.arrival?.at
+        ? DateTime.fromISO(lastSegment.arrival.at, {
+            zone: userTimezone,
+          }).toFormat("cccc, dd LLL yyyy, hh:mm a")
+        : null;
 
-      const formattedDepartureTime = DateTime.fromISO(segment.departure.at, {
-        zone: userTimezone,
-      }).toFormat("cccc, dd LLL yyyy, hh:mm a");
+      const formattedDepartureTime = firstSegment?.departure?.at
+        ? DateTime.fromISO(firstSegment.departure.at, {
+            zone: userTimezone,
+          }).toFormat("cccc, dd LLL yyyy, hh:mm a")
+        : null;
 
-      const duration = Duration.fromISO(itinerary.duration);
-      const readable = `${duration.hours}h ${duration.minutes}m`;
+      const duration = itinerary?.duration
+        ? Duration.fromISO(itinerary.duration)
+        : null;
+      const readableDuration = duration
+        ? `${duration.hours ?? 0}h ${duration.minutes ?? 0}m`
+        : null;
 
       return {
-        airline: segment.carrierCode,
-        from: segment.departure.iataCode,
-        to: lastSegment.arrival.iataCode,
+        airlineName: firstSegment?.operating?.carrierName ?? null,
+        airlineCode: firstSegment?.carrierCode ?? null,
+        flightNumber: firstSegment?.number ?? null,
+        from: firstSegment?.departure?.iataCode ?? null,
+        to: lastSegment?.arrival?.iataCode ?? null,
         departureTime: formattedDepartureTime,
         arrivalTime: formattedArrivalTime,
-        totalDuration: readable,
-        numberOfStops: itinerary.segments.length - 1,
-        cabinClass: traveler.fareDetailsBySegment[0].cabin,
-        totalPrice: traveler.price.total,
-        currency: traveler.price.currency,
+        totalDuration: readableDuration,
+        numberOfStops: segments.length > 0 ? segments.length - 1 : null,
+        cabinClass: fareSegment?.cabin ?? null,
+        checkedBags: fareSegment?.includedCheckedBags?.quantity ?? null,
+        cabinBags: fareSegment?.includedCabinBags?.quantity ?? null,
+        totalPrice: traveler?.price?.total ?? offer.price?.total ?? null,
+        currency: traveler?.price?.currency ?? offer.price?.currency ?? null,
+        isUpsellOffer: offer.isUpsellOffer ?? false,
+        lastTicketingDate: offer.lastTicketingDate ?? null,
       };
     });
 
@@ -98,7 +114,6 @@ const getFlightDetails = async (
       data: mappedFlights,
     });
 
-    // Background DB logging (non-blocking)
     res.on("finish", async () => {
       try {
         await FlightModel.create({

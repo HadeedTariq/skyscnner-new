@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import axios from "@/api/axios";
 import { create } from "zustand";
-import axios from "axios";
 
 export interface CarData {
   id: string;
@@ -48,7 +48,7 @@ export const useCarStore = create<CarState>((set) => ({
       const response = await axios.post<{
         success: boolean;
         data: CarData[];
-      }>("/api/booking/car/unified-details", payload);
+      }>("/booking/car/unified-details", payload);
 
       console.log("Car data fetched successfully:", response.data);
 

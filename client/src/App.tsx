@@ -37,7 +37,6 @@ const App = () => {
   return (
     <Router>
       <Routes>
-        {/* Auth Routes */}
         <Route path="/" element={<AuthLayout />}>
           <Route path="login" element={<Login />} />
           <Route path="register" element={<Register />} />
@@ -53,7 +52,7 @@ const App = () => {
           <Route path="/otp-verify" element={<OtpVerification />} />
           <Route path="/otp-success" element={<OTPSuccess />} />
         </Route>
-        {/* Main App Routes */}
+
         <Route path="/" element={<MainLayout />}>
           <Route index element={<HomePage />} />
           <Route path="flights" element={<FlightPage />} />

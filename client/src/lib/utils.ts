@@ -12,3 +12,7 @@ export const formatDate = (date: Date): string => {
     year: "numeric",
   });
 };
+
+export const translationFormatter = (word: string) => {
+  return word.split(" ").join("_").toLowerCase();
+};

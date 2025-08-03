@@ -16,17 +16,18 @@ config();
 
 const app = express();
 const port = process.env.PORT || 3001;
-
-connectToDb(process.env.MONGO_URI!);
-app.use(morgan("dev"));
-app.use(helmet());
 app.use(
   cors({
     origin: [process.env.FRONT_END_ORIGIN!],
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
     credentials: true,
     exposedHeaders: ["Set-Cookie"],
   })
 );
+
+connectToDb(process.env.MONGO_URI!);
+app.use(morgan("dev"));
+app.use(helmet());
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

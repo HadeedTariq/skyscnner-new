@@ -124,7 +124,7 @@ export default function CarSearchForm() {
       dropoffTime: "12:00",
       returnToSameLocation: false,
     },
-    resolver: zodResolver(FormSchema),
+    resolver: zodResolver(FormSchema as any),
   });
 
   const navigate = useNavigate();

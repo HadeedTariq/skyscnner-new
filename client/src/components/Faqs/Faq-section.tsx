@@ -7,13 +7,8 @@ import {
 } from "@/components/ui/accordion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion } from "framer-motion";
-import faqData from "@/data/faqs";
-
-// Types definition
-interface FaqItemType {
-  question: string;
-  answer: string;
-}
+import { useTranslation } from "react-i18next";
+import faqData, { FaqItemType } from "@/data/faqs";
 
 interface FaqItemProps {
   item: FaqItemType;
@@ -22,6 +17,8 @@ interface FaqItemProps {
 }
 
 const FaqItem: React.FC<FaqItemProps> = ({ item, index, value }) => {
+  const { t } = useTranslation("faq");
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -42,7 +39,7 @@ const FaqItem: React.FC<FaqItemProps> = ({ item, index, value }) => {
             whileHover={{ color: "#3B82F6" }}
             transition={{ duration: 0.2 }}
           >
-            {item.question}
+            {t(item.questionKey)}
           </motion.span>
         </AccordionTrigger>
         <motion.div
@@ -52,7 +49,7 @@ const FaqItem: React.FC<FaqItemProps> = ({ item, index, value }) => {
           transition={{ duration: 0.3, ease: "easeInOut" }}
         >
           <AccordionContent className="mt-2 text-gray-700 pb-4">
-            {item.answer}
+            {t(item.answerKey)}
           </AccordionContent>
         </motion.div>
       </AccordionItem>
@@ -106,7 +103,7 @@ const FaqColumn: React.FC<FaqColumnProps> = ({
 const FaqSection: React.FC = () => {
   const faqColumn1 = faqData.slice(0, Math.ceil(faqData.length / 2));
   const faqColumn2 = faqData.slice(Math.ceil(faqData.length / 2));
-
+  const { t } = useTranslation();
   return (
     <section className="bg-gray-50 py-12">
       <motion.div
@@ -122,7 +119,7 @@ const FaqSection: React.FC = () => {
               transition={{ duration: 0.5, delay: 0.2 }}
             >
               <CardTitle className="text-2xl font-semibold">
-                Booking flights with Skyscanner
+                {t("flight_booking_faq")}
               </CardTitle>
             </motion.div>
           </CardHeader>

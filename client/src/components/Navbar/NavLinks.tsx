@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "react-router";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 
 const buttons = [
   {
@@ -39,6 +40,7 @@ const itemVariants = {
 
 export const NavLinks = () => {
   const { pathname } = useLocation();
+  const { t } = useTranslation();
 
   const isActive = (path: string) => {
     if (path === "/flights") {
@@ -72,7 +74,7 @@ export const NavLinks = () => {
                   variant="ghost"
                 >
                   <FontAwesomeIcon icon={icon} className="mr-2" />
-                  {name}
+                  {t(name.toLowerCase())}
                 </Button>
               </motion.div>
             </Link>

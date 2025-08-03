@@ -1,9 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import axios from "@/api/axios";
 import { create } from "zustand";
-import axios from "axios";
 
-// --- Interfaces ---
 export interface TravelerDetails {
   adults: number;
   children: { age: number }[];
@@ -19,17 +18,23 @@ export interface FlightSearchPayload {
 }
 
 export interface FlightResult {
-  id: string; // Ensure this ID is unique per flight item
-  airline: string;
-  from: string; // e.g., "JFK"
-  to: string; // e.g., "LHR"
-  departureTime: string; // Format: "HH:MM" e.g., "08:30"
-  arrivalTime: string; // Format: "HH:MM" e.g., "20:45"
-  totalDuration: string; // Format: "Xh Ym", "Xh", or "Ym" e.g., "12h 15m"
+  id: string | null;
+  airlineName: string;
+  airlineCode: string;
+  flightNumber: string;
+  from: string;
+  to: string;
+  departureTime: string; // formatted string
+  arrivalTime: string; // formatted string
+  totalDuration: string; // e.g., "5h 30m"
   numberOfStops: number;
   cabinClass: string;
-  totalPrice: string; // Store as string, parse to number for calcs
-  currency: string; // e.g., "USD"
+  checkedBags: number;
+  cabinBags: number;
+  totalPrice: string;
+  currency: string;
+  isUpsellOffer: boolean;
+  lastTicketingDate: string; // raw ISO string
 }
 
 // Add interface for API response structure
@@ -87,7 +92,7 @@ const filterFlightsHelper = (
 
     if (
       filters.airlines.length > 0 &&
-      !filters.airlines.includes(flight.airline)
+      !filters.airlines.includes(flight.airlineName)
     ) {
       return false;
     }
@@ -158,7 +163,7 @@ export const useFlightStore = create<FlightState>((set, get) => ({
 
       // Fix: Use the correct response type
       const response = await axios.post<FlightApiResponse>(
-        "/api/booking/flight/unified-details",
+        "/booking/flight/unified-details",
         payload
       );
       console.log(response.data);
@@ -224,7 +229,7 @@ export const useFlightStore = create<FlightState>((set, get) => ({
     }
 
     const airlines = Array.from(
-      new Set(allFetchedFlights.map((f) => f.airline))
+      new Set(allFetchedFlights.map((f) => f.airlineName))
     ).sort();
     const cabinClasses = Array.from(
       new Set(allFetchedFlights.map((f) => f.cabinClass))
