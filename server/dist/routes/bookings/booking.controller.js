@@ -10,6 +10,7 @@ const hotel_validator_1 = require("./hotels/hotel.validator");
 const hotel_model_1 = require("./hotels/hotel.model");
 const car_validator_1 = require("./car/car.validator");
 const car_model_1 = require("./car/car.model");
+const general_utils_1 = require("../../utils/general.utils");
 const getFlightDetails = async (req, res, next) => {
     try {
         const parsed = flight_validator_1.flightValidator.safeParse(req.body);
@@ -30,6 +31,7 @@ const getFlightDetails = async (req, res, next) => {
             departureDate,
             adults,
             max: 5,
+            currencyCode: "EUR",
         };
         if (returnDate)
             params.returnDate = returnDate;
@@ -43,7 +45,7 @@ const getFlightDetails = async (req, res, next) => {
                 message: "Failed to fetch flight data from the flight provider.",
             });
         }
-        const mappedFlights = response.data.map((offer) => {
+        const mappedFlights = await Promise.all(response.data.map(async (offer) => {
             const itinerary = offer.itineraries?.[0] ?? null;
             const segments = itinerary?.segments ?? [];
             const firstSegment = segments[0] ?? null;
@@ -66,6 +68,8 @@ const getFlightDetails = async (req, res, next) => {
             const readableDuration = duration
                 ? `${duration.hours ?? 0}h ${duration.minutes ?? 0}m`
                 : null;
+            const from = traveler?.price?.currency ?? offer.price?.currency;
+            const rateToEur = await (0, general_utils_1.getConversionRateToEUR)(from);
             return {
                 airlineName: firstSegment?.operating?.carrierName ?? null,
                 airlineCode: firstSegment?.carrierCode ?? null,
@@ -82,9 +86,10 @@ const getFlightDetails = async (req, res, next) => {
                 totalPrice: traveler?.price?.total ?? offer.price?.total ?? null,
                 currency: traveler?.price?.currency ?? offer.price?.currency ?? null,
                 isUpsellOffer: offer.isUpsellOffer ?? false,
+                rateToEur,
                 lastTicketingDate: offer.lastTicketingDate ?? null,
             };
-        });
+        }));
         res.status(200).json({
             success: true,
             data: mappedFlights,
@@ -134,7 +139,6 @@ const getHotelDetails = async (req, res, next) => {
             });
         }
         catch (err) {
-            console.log(err);
             return res.status(502).json({
                 success: false,
                 message: "Failed to fetch hotel locations from external provider.",
@@ -148,7 +152,7 @@ const getHotelDetails = async (req, res, next) => {
             });
         }
         const hotelIds = hotels
-            .slice(0, 5)
+            .slice(0, 25)
             .map((hotel) => hotel.hotelId)
             .join(",");
         let offersResponse;
@@ -175,7 +179,7 @@ const getHotelDetails = async (req, res, next) => {
                 message: "No hotel offers available for the selected dates.",
             });
         }
-        const mappedHotels = offersResponse.data.map((offer) => {
+        const mappedHotels = await Promise.all(offersResponse.data.map(async (offer) => {
             const hotelName = offer.hotel.name;
             const cityCode = offer.hotel.cityCode;
             const room = offer.offers[0].room;
@@ -190,6 +194,8 @@ const getHotelDetails = async (req, res, next) => {
                 "REFUNDABLE_UP_TO_DEADLINE";
             const bedType = room.typeEstimated.bedType || "N/A";
             const guests = offer.offers[0].guests?.adults || 1;
+            const from = currency;
+            const rateToEur = await (0, general_utils_1.getConversionRateToEUR)(from);
             return {
                 hotelName,
                 cityCode,
@@ -203,8 +209,9 @@ const getHotelDetails = async (req, res, next) => {
                 refundable,
                 guests,
                 bedType,
+                rateToEur,
             };
-        });
+        }));
         try {
             await hotel_model_1.HotelModel.insertOne({
                 user: req.body.user?.id,
@@ -241,10 +248,31 @@ const getCarDetails = async (req, res, next) => {
         const { pickUpLocation, pickUpDate, pickUpTime, dropOffLocation, dropOffDate, dropOffTime, } = parsed.data;
         const pickupDateTime = new Date(`${pickUpDate}T${pickUpTime}:00`);
         const dropoffDateTime = new Date(`${dropOffDate}T${dropOffTime}:00`);
-        if (pickupDateTime >= dropoffDateTime) {
+        if (isNaN(pickupDateTime.getTime()) || isNaN(dropoffDateTime.getTime())) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid pick-up or drop-off date/time format.",
+            });
+        }
+        if (pickupDateTime.getTime() >= dropoffDateTime.getTime()) {
             return res.status(400).json({
                 success: false,
                 message: "Pick-up date/time must be earlier than drop-off date/time.",
+            });
+        }
+        const durationInMs = dropoffDateTime - pickupDateTime;
+        const durationInMinutes = durationInMs / (1000 * 60);
+        if (durationInMinutes < 60) {
+            return res.status(400).json({
+                success: false,
+                message: "Minimum rental duration is 1 hour.",
+            });
+        }
+        const maxRentalDays = 30;
+        if (durationInMinutes > maxRentalDays * 24 * 60) {
+            return res.status(400).json({
+                success: false,
+                message: `Maximum rental duration is ${maxRentalDays} days.`,
             });
         }
         let availabilityResponse;
@@ -257,15 +285,43 @@ const getCarDetails = async (req, res, next) => {
                 startDateTime: formattedPickup,
                 endDateTime: formattedDropoff,
                 transferType: "PRIVATE",
+                currencyCode: "EUR",
             };
             availabilityResponse = await amadeus_1.amadeus.shopping.transferOffers.post(transferSearchBody);
         }
         catch (err) {
-            console.error("Error calling Amadeus API:", err?.message || err);
-            return res.status(502).json({
+            const statusCode = err?.response?.statusCode || 502;
+            const errorCode = err?.code || null;
+            const errorMessage = err?.description || err?.message || "Unknown error occurred";
+            console.error("Amadeus API Error:", {
+                code: errorCode,
+                status: statusCode,
+                message: errorMessage,
+            });
+            let clientMessage = "Unable to fetch transfer offers. Please try again later.";
+            if (statusCode === 400) {
+                clientMessage =
+                    "Bad request sent to transfer provider. Please check your pickup/dropoff info.";
+            }
+            else if (statusCode === 401 || statusCode === 403) {
+                clientMessage =
+                    "Authentication with transfer provider failed. Please contact support.";
+            }
+            else if (statusCode === 429) {
+                clientMessage =
+                    "Rate limit exceeded with transfer provider. Please try again after a short while.";
+            }
+            else if (statusCode >= 500 && statusCode < 600) {
+                clientMessage =
+                    "Transfer provider is currently unavailable. Please try again shortly.";
+            }
+            return res.status(statusCode).json({
                 success: false,
-                message: "Failed to fetch transfer offers from provider. Please try again later.",
-                error: err?.message || "Unknown error",
+                message: clientMessage,
+                error: {
+                    code: errorCode,
+                    detail: errorMessage,
+                },
             });
         }
         const availableCars = availabilityResponse?.data;
@@ -275,11 +331,13 @@ const getCarDetails = async (req, res, next) => {
                 message: "No available cars found for the selected route and time.",
             });
         }
-        const carsDetails = availableCars.map((car) => {
+        const carsDetails = await Promise.all(availableCars.map(async (car) => {
             const vehicle = car.vehicle || {};
             const provider = car.serviceProvider || {};
             const quotation = car.converted || car.quotation || {};
             const seats = vehicle.seats?.[0]?.count ?? 0;
+            const from = quotation.currencyCode;
+            const rateToEur = await (0, general_utils_1.getConversionRateToEUR)(from);
             return {
                 id: car.id,
                 providerName: provider.name || "Unknown Provider",
@@ -292,10 +350,11 @@ const getCarDetails = async (req, res, next) => {
                 endTime: car.end?.dateTime || "",
                 endLocation: car.end?.locationCode || "Unknown",
                 price: quotation.monetaryAmount || "0",
+                rateToEur,
                 currency: quotation.currencyCode || "EUR",
                 distanceKm: car.distance?.value || 0,
             };
-        });
+        }));
         try {
             await car_model_1.CarBookingModel.insertOne({
                 user: req.body.user?.id,

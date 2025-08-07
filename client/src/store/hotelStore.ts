@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import axios from "@/api/axios";
+import { toast } from "sonner";
 import { create } from "zustand";
 
 export interface HotelData {
@@ -12,6 +13,7 @@ export interface HotelData {
   checkIn: string;
   checkOut: string;
   price: string;
+  rateToEur: number;
   currency: string;
   refundable: boolean;
   guests: number;
@@ -56,6 +58,7 @@ export const useHotelStore = create<HotelState>((set) => ({
 
       set({ hotels: response.data.data, loading: false });
     } catch (error: any) {
+      toast.error(error.response.data.message || "Failed to fetch hotels", {});
       set({
         error: error.message || "Failed to fetch hotels",
         loading: false,

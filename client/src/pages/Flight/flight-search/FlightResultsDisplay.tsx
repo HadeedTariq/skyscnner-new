@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useFlightStore } from "@/store/flightStore";
 import FlightCard from "./FlightCard";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertTriangle, SearchX, PlaneTakeoff } from "lucide-react"; // Using PlaneTakeoff for initial state
+import { AlertTriangle, SearchX, PlaneTakeoff, Search } from "lucide-react"; // Using PlaneTakeoff for initial state
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router";
 import { cn } from "@/lib/utils";
@@ -110,29 +110,104 @@ const FlightResultsDisplay = () => {
 
   if (!loading && allFetchedFlights.length === 0 && !error) {
     return (
-      <Card className="flex flex-col items-center justify-center text-center p-10 bg-white rounded-xl shadow-lg h-96">
-        <PlaneTakeoff className="w-16 h-16 text-slate-400 mb-5" />
-        <h3 className="text-xl font-semibold text-slate-700 mb-2">
-          Search for Flights
-        </h3>
-        <p className="text-slate-500">
-          Enter your journey details to find available flights.
-        </p>
+      <div className="relative overflow-hidden">
+        <Card className="relative flex flex-col items-center justify-center text-center p-12 bg-gradient-to-br from-blue-50 via-white to-indigo-50 rounded-2xl shadow-xl border-0 min-h-[28rem]">
+          {/* Background decoration */}
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full opacity-30 transform translate-x-8 -translate-y-8"></div>
+          <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-br from-sky-100 to-blue-100 rounded-full opacity-40 transform -translate-x-6 translate-y-6"></div>
 
-        <Link to={"/flights"}>
-          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}>
-            <Button
-              className={cn(
-                "border rounded-4xl  hover:bg-light-blue hover:border-light-blue bg-light-blue hover:text-white text-white transition-all duration-200"
-              )}
-              variant="ghost"
-            >
-              <FontAwesomeIcon icon={faPlane} className="mr-2" />
-              Search Flights
-            </Button>
-          </motion.div>
-        </Link>
-      </Card>
+          {/* Main content */}
+          <div className="relative z-10">
+            {/* Icon with animated background */}
+            <div className="relative mb-6">
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-indigo-500 rounded-full opacity-10 animate-pulse"></div>
+              <div className="relative bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full p-4 shadow-lg">
+                <PlaneTakeoff className="w-12 h-12 text-white" />
+              </div>
+            </div>
+
+            {/* Heading */}
+            <h3 className="text-2xl font-bold bg-gradient-to-r from-slate-700 to-slate-900 bg-clip-text text-transparent mb-3">
+              No Flights Available Right Now
+            </h3>
+
+            {/* Subheading */}
+            <p className="text-lg text-slate-600 mb-2 font-medium">
+              Don't worry! Let's find your perfect flight
+            </p>
+
+            {/* Description */}
+            <p className="text-slate-500 mb-8 max-w-md leading-relaxed">
+              Flights for your selected route might be fully booked or not
+              available for your dates. Try adjusting your search criteria or
+              explore alternative options.
+            </p>
+
+            {/* Action buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 items-center justify-center">
+              <Link to={"/flights"}>
+                <motion.div
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  whileTap={{ scale: 0.97 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                >
+                  <Button
+                    className={cn(
+                      "bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700",
+                      "text-white border-0 rounded-xl px-6 py-3 shadow-lg hover:shadow-xl",
+                      "transition-all duration-300 font-medium"
+                    )}
+                    size="lg"
+                  >
+                    <FontAwesomeIcon icon={faPlane} className="mr-2" />
+                    Search New Flights
+                  </Button>
+                </motion.div>
+              </Link>
+
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.97 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              >
+                <Link to={"/flights"}>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "border-2 border-slate-300 hover:border-blue-400 hover:bg-blue-50",
+                      "text-slate-700 hover:text-blue-600 rounded-xl px-6 py-3",
+                      "transition-all duration-300 font-medium bg-white shadow-sm hover:shadow-md"
+                    )}
+                    size="lg"
+                    onClick={() => {}}
+                  >
+                    <Search className="mr-2 w-4 h-4" />
+                    Modify Search
+                  </Button>
+                </Link>
+              </motion.div>
+            </div>
+
+            {/* Helpful suggestions */}
+            <div className="mt-8 p-4 bg-white/60 backdrop-blur-sm rounded-xl border border-slate-200">
+              <p className="text-sm font-medium text-slate-600 mb-2">
+                💡 Try these suggestions:
+              </p>
+              <div className="flex flex-wrap gap-2 justify-center">
+                <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                  Change dates
+                </span>
+                <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-medium">
+                  Nearby airports
+                </span>
+                <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
+                  Flexible times
+                </span>
+              </div>
+            </div>
+          </div>
+        </Card>
+      </div>
     );
   }
 
@@ -144,7 +219,7 @@ const FlightResultsDisplay = () => {
       className="space-y-4"
     >
       <AnimatePresence mode="popLayout">
-        {flights.map((flight) => (
+        {flights?.map((flight) => (
           <FlightCard key={flight.id} flight={flight} />
         ))}
       </AnimatePresence>

@@ -394,7 +394,7 @@ export default function HomeSearchForm() {
         };
 
         await fetchFlights(payload);
-        navigate("/flight/search");
+        navigate("/flights/search");
       } catch (error) {
         console.error("Flight search failed:", error);
 
@@ -644,7 +644,7 @@ export default function HomeSearchForm() {
         <motion.div className="md:col-span-1 mt-1" variants={itemVariants}>
           <SearchButton
             isLoading={isLoading}
-            aria_label={t("search_button_aria_label")}
+            aria_label={t("Search Flight")}
           ></SearchButton>
         </motion.div>
       </div>

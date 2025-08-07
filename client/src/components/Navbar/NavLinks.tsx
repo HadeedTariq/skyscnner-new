@@ -43,10 +43,7 @@ export const NavLinks = () => {
   const { t } = useTranslation();
 
   const isActive = (path: string) => {
-    if (path === "/flights") {
-      return pathname !== "/cars" && pathname !== "/hotels";
-    }
-    return pathname === path;
+    return pathname.includes(path);
   };
 
   return (

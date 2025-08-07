@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Search } from "lucide-react";
+import { Loader2, Search } from "lucide-react";
 
 interface SearchButtonProps {
   isLoading: boolean;
@@ -19,7 +19,10 @@ export const SearchButton = ({
     disabled={isLoading}
   >
     {isLoading ? (
-      <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" />
+      <>
+        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        Searching...
+      </>
     ) : (
       <>
         <Search className="h-5 w-5" />

@@ -14,6 +14,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import NoHotelsFound from "@/components/NoHotelsFound";
+import { useNavigate } from "react-router";
+import { formatPrice } from "@/lib/utils";
 
 const HotelSearchResult = () => {
   const hotels = useHotelStore((state) => state.hotels);
@@ -74,13 +76,6 @@ const HotelSearchResult = () => {
     );
   }
 
-  const formatPrice = (price: string) => {
-    const numPrice = parseFloat(price);
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(numPrice);
-  };
   const filteredHotels = hotels.filter((hotel) => {
     const matchesBedType =
       bedType.length > 0 ? bedType.includes(hotel.bedType) : true;
@@ -99,6 +94,8 @@ const HotelSearchResult = () => {
     setRefundable(false);
     setPriceRange([0, 3000]);
   };
+
+  const navigate = useNavigate();
 
   return (
     <div className="bg-gray-50 min-h-screen pb-12 ">
@@ -286,7 +283,15 @@ const HotelSearchResult = () => {
                           3-night stay
                         </div>
                         <div className="font-bold text-2xl mb-1">
-                          {formatPrice(hotel.price)}
+                          {(() => {
+                            const priceInEur = formatPrice({
+                              price: hotel.price,
+                              rateToEur: hotel.rateToEur,
+                            });
+                            return priceInEur === "€0.00"
+                              ? "Rate Conversion Issue"
+                              : priceInEur;
+                          })()}
                         </div>
                         <div className="text-xs text-gray-500 mb-3">
                           Includes taxes & fees
@@ -306,8 +311,11 @@ const HotelSearchResult = () => {
                       </div>
 
                       <div>
-                        <Button className="w-full bg-blue-600 hover:bg-blue-700">
-                          View Deal
+                        <Button
+                          className="w-full bg-blue-600 hover:bg-blue-700"
+                          onClick={() => navigate("/payments")}
+                        >
+                          Select Hotel
                         </Button>
                       </div>
                     </div>

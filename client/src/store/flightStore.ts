@@ -24,6 +24,7 @@ export interface FlightResult {
   flightNumber: string;
   from: string;
   to: string;
+  rateToEur: number;
   departureTime: string; // formatted string
   arrivalTime: string; // formatted string
   totalDuration: string; // e.g., "5h 30m"

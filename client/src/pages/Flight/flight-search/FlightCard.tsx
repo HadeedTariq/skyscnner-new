@@ -16,6 +16,7 @@ import {
 import { useAirports } from "@/store/airportStore";
 import { useNavigate } from "react-router-dom";
 import { FlightResult } from "@/store/flightStore";
+import { formatPrice } from "@/lib/utils";
 
 interface FlightCardProps {
   flight: FlightResult;
@@ -48,7 +49,7 @@ const detailsVariants = {
     height: 0,
     paddingTop: 0,
     paddingBottom: 0,
-    transition: { duration: 0.25, ease: "easeOut" }, // Slightly longer for smoother hide
+    transition: { duration: 0.25, ease: "easeOut" },
   },
   visible: {
     opacity: 1,
@@ -159,10 +160,15 @@ const FlightCard: React.FC<FlightCardProps> = ({ flight }) => {
               <div className="sm:border-l sm:border-slate-100 sm:pl-8 flex flex-col items-center sm:items-end justify-between gap-4 w-full sm:w-auto sm:min-w-[180px] mt-6 sm:mt-0 pt-6 sm:pt-0 border-t sm:border-t-0 border-slate-100">
                 <div className="text-center sm:text-right">
                   <div className="text-3xl sm:text-4xl font-extrabold text-sky-700 leading-tight">
-                    {flight.totalPrice}
-                    <span className="text-lg font-semibold ml-1 text-slate-600">
-                      {flight.currency}
-                    </span>
+                    {(() => {
+                      const priceInEur = formatPrice({
+                        price: flight.totalPrice,
+                        rateToEur: flight.rateToEur,
+                      });
+                      return priceInEur === "€0.00"
+                        ? "Rate Conversion Issue"
+                        : priceInEur;
+                    })()}
                   </div>
                   <div className="text-sm text-slate-500 mt-1">Total Price</div>
                 </div>

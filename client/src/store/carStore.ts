@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import axios from "@/api/axios";
+import { toast } from "sonner";
 import { create } from "zustand";
 
 export interface CarData {
@@ -15,6 +16,7 @@ export interface CarData {
   endTime: string;
   endLocation: string;
   price: string;
+  rateToEur: number;
   currency: string;
   distanceKm: number;
 }
@@ -58,6 +60,7 @@ export const useCarStore = create<CarState>((set) => ({
         error: error.message || "Failed to fetch cars",
         loading: false,
       });
+      toast.error(error.response.data.message || "Failed to fetch cars");
       throw error;
     }
   },
