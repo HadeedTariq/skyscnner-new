@@ -65,8 +65,6 @@ export const useAirports = create<AirportsState>()(
           if (!response.ok) throw new Error("Failed to fetch airport data");
           const rawJson = await response.json();
 
-          console.log(rawJson);
-
           const airportsList: Airport[] = Object.values(rawJson)
             .filter(
               (a: any) =>

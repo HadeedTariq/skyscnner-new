@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import axios from "@/api/axios";
+import { toast } from "sonner";
 import { create } from "zustand";
-import axios from "axios";
 
 export interface HotelData {
   hotelName: string;
@@ -12,6 +13,7 @@ export interface HotelData {
   checkIn: string;
   checkOut: string;
   price: string;
+  rateToEur: number;
   currency: string;
   refundable: boolean;
   guests: number;
@@ -50,12 +52,13 @@ export const useHotelStore = create<HotelState>((set) => ({
       const response = await axios.post<{
         success: boolean;
         data: HotelData[];
-      }>("/api/booking/hotel/unified-details", payload);
+      }>("/booking/hotel/unified-details", payload);
 
       console.log("Hotel data fetched successfully:", response.data);
 
       set({ hotels: response.data.data, loading: false });
     } catch (error: any) {
+      toast.error(error.response.data.message || "Failed to fetch hotels", {});
       set({
         error: error.message || "Failed to fetch hotels",
         loading: false,

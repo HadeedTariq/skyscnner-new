@@ -12,7 +12,7 @@ export const Topbar = () => {
         <Logo />
       </div>
       <div>
-        <ul className="flex gap-1">
+        <ul className="flex gap-1 items-center">
           <li>
             {!user && (
               <Link to={"/login"}>
@@ -22,13 +22,7 @@ export const Topbar = () => {
               </Link>
             )}
           </li>
-          <li>
-            <Link to={"/payments"}>
-              <Button className="" variant={"ghost"}>
-                Payments{" "}
-              </Button>
-            </Link>
-          </li>
+
           <li>
             {user && (
               <Button className="" variant={"ghost"} onClick={logout}>

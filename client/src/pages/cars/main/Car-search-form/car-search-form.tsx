@@ -11,7 +11,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/calender"; // Original path: @/components/calender (potential typo: calendar?)
-import { CalendarIcon, Clock } from "lucide-react";
+import { CalendarIcon, Clock, Loader2, Search } from "lucide-react";
 import { CarSearchPayload, useCarStore } from "@/store/carStore";
 import { Button } from "@/components/ui/button";
 import {
@@ -124,11 +124,12 @@ export default function CarSearchForm() {
       dropoffTime: "12:00",
       returnToSameLocation: false,
     },
-    resolver: zodResolver(FormSchema),
+    resolver: zodResolver(FormSchema as any),
   });
 
   const navigate = useNavigate();
   const { fetchCars } = useCarStore();
+  const { loading } = useCarStore();
 
   const returnToSameLocation = watch("returnToSameLocation");
   const pickupLocation = watch("pickupLocation");
@@ -148,7 +149,7 @@ export default function CarSearchForm() {
     }
   }, [returnToSameLocation, pickupLocation, setValue]);
 
-  const onSubmit = (data: FormData) => {
+  const onSubmit = async (data: FormData) => {
     console.log("Form submitted:", data);
     const payload = {
       pickUpLocation: data.pickupLocation.code,
@@ -162,7 +163,7 @@ export default function CarSearchForm() {
 
     console.log("Payload:", payload);
     try {
-      fetchCars(payload);
+      await fetchCars(payload);
       navigate("/cars/search");
     } catch (error) {
       console.log(error);
@@ -463,8 +464,19 @@ export default function CarSearchForm() {
             <Button
               type="submit"
               className="w-full h-12 bg-blue-600 hover:bg-blue-700"
+              disabled={loading}
             >
-              Search Cars
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Searching...
+                </>
+              ) : (
+                <>
+                  <Search className="mr-1 h-4" />
+                  Search Cars
+                </>
+              )}
             </Button>
           </motion.div>
         </motion.div>

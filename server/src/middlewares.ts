@@ -22,7 +22,7 @@ export function errorHandler(
   next: NextFunction
 ) {
   const statusCode = err.status !== 200 ? err.status : 500;
-  res.status(statusCode);
+  res.status(statusCode || 500);
   res.json({
     message: err.message,
     stack: process.env.NODE_ENV === "production" ? "🥞" : err.stack,

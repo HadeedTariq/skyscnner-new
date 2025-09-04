@@ -1,0 +1,31 @@
+{
+  "faq_q1": "¿Cómo funciona Skyscanner?",
+  "faq_a1": "Skyscanner es un motor de búsqueda de viajes que compara millones de vuelos entre miles de aerolíneas y agencias de viajes. Te mostramos las opciones disponibles para que elijas la que mejor se adapte a tus necesidades.",
+
+  "faq_q2": "¿Cómo puedo encontrar el vuelo más barato usando Skyscanner?",
+  "faq_a2": "Usa nuestra vista de 'Todo el mes' o 'Mes más barato' en la búsqueda de vuelos para ver los precios más bajos en un rango de fechas amplio. Sé flexible con tus fechas de viaje y considera volar en días u horarios menos populares.",
+
+  "faq_q3": "¿A dónde debería reservar un vuelo ahora?",
+  "faq_a3": "Los precios de los vuelos y los destinos populares pueden variar mucho. Usa nuestra función de exploración para ver destinos posibles según tu presupuesto o navega por las rutas populares desde tu ubicación.",
+
+  "faq_q4": "¿Reservo mi vuelo con Skyscanner?",
+  "faq_a4": "No, Skyscanner es un motor de búsqueda. Una vez encuentres un vuelo que te guste, te redirigiremos al sitio web de la aerolínea o agencia de viajes para completar tu reserva.",
+
+  "faq_q5": "¿Qué sucede después de haber reservado mi vuelo?",
+  "faq_a5": "Después de reservar, recibirás un correo de confirmación de la aerolínea o agencia de viajes con la que hiciste la reserva. Skyscanner no gestiona el proceso de reserva ni ofrece soporte posterior.",
+
+  "faq_q6": "¿Skyscanner también ofrece hoteles?",
+  "faq_a6": "Sí, Skyscanner también busca y compara precios de hoteles y alojamientos en todo el mundo.",
+
+  "faq_q7": "¿Y qué hay del alquiler de coches?",
+  "faq_a7": "Sí, también puedes usar Skyscanner para comparar opciones de alquiler de coches de varios proveedores.",
+
+  "faq_q8": "¿Qué es una Alerta de Precios?",
+  "faq_a8": "Configura una Alerta de Precios en Skyscanner para seguir el precio de una ruta de vuelo específica. Te avisaremos por correo electrónico si el precio sube o baja.",
+
+  "faq_q9": "¿Puedo reservar un billete flexible?",
+  "faq_a9": "Aunque Skyscanner no ofrece directamente billetes flexibles, muchas veces puedes encontrar opciones con políticas de reserva flexibles ofrecidas por aerolíneas y agencias. Busca estas opciones cuando seas redirigido a su sitio web.",
+
+  "faq_q10": "¿Puedo reservar vuelos que emitan menos CO₂?",
+  "faq_a10": "Algunas aerolíneas y agencias de viajes ofrecen opciones de vuelos con menores emisiones de CO₂. Busca etiquetas o filtros que indiquen estas opciones cuando seas redirigido a su sitio de reservas."
+}

@@ -126,6 +126,8 @@ const FlightsSidebar = () => {
     { label: "2+ Stops", value: 2 as const },
   ];
 
+  console.log(filterOptions);
+
   return (
     <motion.div className=" p-4 sm:p-5 rounded-xl shadow-lg sticky top-6 lg:top-8 w-full">
       <div className="flex items-center justify-between mb-5">
@@ -184,14 +186,14 @@ const FlightsSidebar = () => {
               Airlines
             </AccordionTrigger>
             <AccordionContent className="pt-2 pb-1 space-y-2.5 px-3 max-h-48 overflow-y-auto pretty-scrollbar">
-              {filterOptions.airlines.map((airline) => (
+              {filterOptions.airlines?.map((airline) => (
                 <motion.div
                   key={`airline-opt-${airline}`}
                   variants={itemVariants}
                   className="flex items-center space-x-2.5"
                 >
                   <Checkbox
-                    id={`airline-${airline.replace(/\s+/g, "-")}`}
+                    id={`airline-${airline?.replace(/\s+/g, "-")}`}
                     checked={activeFilters.airlines.includes(airline)}
                     onCheckedChange={(checked: boolean) =>
                       handleAirlineChange(airline, !!checked)
@@ -199,7 +201,7 @@ const FlightsSidebar = () => {
                     className="border-slate-400 data-[state=checked]:bg-sky-600 data-[state=checked]:border-sky-600"
                   />
                   <Label
-                    htmlFor={`airline-${airline.replace(/\s+/g, "-")}`}
+                    htmlFor={`airline-${airline?.replace(/\s+/g, "-")}`}
                     className="text-sm font-normal text-gray-600 cursor-pointer"
                   >
                     {airline}

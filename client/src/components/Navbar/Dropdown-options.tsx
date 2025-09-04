@@ -15,11 +15,12 @@ import {
   faPlane,
 } from "@fortawesome/free-solid-svg-icons";
 import { Link } from "react-router";
+import { useTranslation } from "react-i18next";
 
 const menuItems = [
-  { icon: faPlane, label: "Flight", path: "/flights" },
-  { icon: faHotel, label: "Hotel", path: "/hotels" },
-  { icon: faCar, label: "Car", path: "/cars" },
+  { icon: faPlane, label: "Flights", path: "/flights" },
+  { icon: faHotel, label: "Hotels", path: "/hotels" },
+  { icon: faCar, label: "Cars", path: "/cars" },
 ];
 
 export function DropdownOptions() {
@@ -68,11 +69,12 @@ function MenuItem({
   label: string;
   path: string;
 }) {
+  const { t } = useTranslation();
   return (
     <DropdownMenuItem>
       <Link to={path}>
         <FontAwesomeIcon icon={icon} className="mr-4 text-blue-500" />
-        <span>{label}</span>
+        <span>{t(label.toLowerCase())}</span>
       </Link>
     </DropdownMenuItem>
   );

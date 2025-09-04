@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { Calendar, Search } from "lucide-react";
+import { Calendar, Loader2, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router";
 import {
@@ -14,7 +14,7 @@ import {
 } from "@/pages/home/main/search-input-field";
 import { useHotelStore } from "@/store/hotelStore";
 import { HotelSearchPayload } from "@/store/hotelStore";
-// Type definitions
+
 type RoomType = "SINGLE" | "DOUBLE" | "SUITE" | "ALL";
 
 interface GuestDetails {
@@ -72,6 +72,7 @@ export default function HotelSearchForm() {
     userTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
   });
   const fetchHotels = useHotelStore((state) => state.fetchHotels);
+  const loading = useHotelStore((state) => state.loading);
   const navigate = useNavigate();
 
   const [openPopover, setOpenPopover] = useState<PopoverState>({
@@ -95,12 +96,10 @@ export default function HotelSearchForm() {
 
   const updateFormData = (field: string, value: any): void => {
     setFormData((prev) => {
-      // Handle nested properties with dot notation (e.g., "guestDetails.adults")
       if (field.includes(".")) {
         const [parent, child] = field.split(".");
         const parentKey = parent as keyof FormData;
 
-        // Type-guard to ensure we're dealing with an object
         if (typeof prev[parentKey] === "object" && prev[parentKey] !== null) {
           return {
             ...prev,
@@ -110,15 +109,14 @@ export default function HotelSearchForm() {
             },
           };
         }
-        return prev; // Return unchanged if not a valid parent key
+        return prev;
       }
 
-      // Handle regular properties
       if (field as keyof FormData) {
         return { ...prev, [field]: value };
       }
 
-      return prev; // Return unchanged if not a valid field
+      return prev;
     });
   };
 
@@ -133,8 +131,6 @@ export default function HotelSearchForm() {
   const handleLocationChange = useCallback(
     (field: "origin" | "destination") => (location: Location | null) => {
       setFormData((prev) => ({ ...prev, [field]: location }));
-
-      // Clear validation errors for this field
     },
     [setFormData]
   );
@@ -153,7 +149,6 @@ export default function HotelSearchForm() {
             age: 10,
           })
         ),
-
         rooms: formData.rooms,
       },
 
@@ -162,7 +157,7 @@ export default function HotelSearchForm() {
 
     console.log("Payload:", payload);
     try {
-      fetchHotels(payload);
+      await fetchHotels(payload);
       navigate("/hotels/search");
     } catch (error) {
       console.log(error);
@@ -170,7 +165,6 @@ export default function HotelSearchForm() {
     console.log("Search data:", formData);
   };
 
-  // Calculate guest summary text
   const guestSummary = `${formData.guestDetails.adults} adults${
     formData.guestDetails.children > 0
       ? `, ${formData.guestDetails.children} children`
@@ -244,24 +238,6 @@ export default function HotelSearchForm() {
             <label className="text-xs text-gray-300 mb-1 block">
               Destination
             </label>
-            {/* <LocationSearchInput
-            id="origin"
-            label="From"
-            value={formData.origin}
-            onChange={handleLocationChange("origin")}
-            onSelect={(location) => {
-              // Store the full location object with both code and name
-              setFormData((prev) => ({
-                ...prev,
-                origin: {
-                  name: location.name,
-                  code: location.code,
-                },
-              }));
-            }}
-            error={errors.origin}
-            className="rounded-t-2xl md:rounded-t-none md:rounded-l-2xl pr-6"
-          /> */}
             <LocationSearchInput
               id="destination"
               placeholder="Where are you flying from?"
@@ -352,9 +328,19 @@ export default function HotelSearchForm() {
           <Button
             onClick={handleSearch}
             className="bg-blue-600 hover:bg-blue-700 text-white w-full h-12 px-4"
+            disabled={loading}
           >
-            <Search className="mr-1 h-4" />
-            Search Hotels
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Searching...
+              </>
+            ) : (
+              <>
+                <Search className="mr-1 h-4" />
+                Search Hotels
+              </>
+            )}
           </Button>
         </div>
       </div>

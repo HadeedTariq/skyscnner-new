@@ -1,4 +1,4 @@
-// contexts/AuthContext.tsx
+import axios from "@/api/axios";
 import React, { createContext, useContext, useEffect, useState } from "react";
 
 interface User {
@@ -7,6 +7,7 @@ interface User {
   email: string;
   gender: string;
 }
+
 interface OtpProps {
   email: string;
   username: string;
@@ -43,15 +44,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch("/api/auth", {
-        credentials: "include",
-      });
-
-      if (!response.ok) throw new Error("Unauthorized");
-
-      const data = await response.json();
+      const { data } = await axios.get("/auth");
       setUser(data.user);
-    } catch (error) {
+    } catch {
       setUser(null);
     } finally {
       setIsLoading(false);
@@ -62,22 +57,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setError(null);
     setIsLoading(true);
     try {
-      const response = await fetch("/api/auth/sendOtp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, username, password, gender }),
-        credentials: "include",
+      await axios.post("/auth/sendOtp", {
+        email,
+        username,
+        password,
+        gender,
       });
-
-      console.log(response);
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message);
-      }
       return true;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to send OTP");
+    } catch (err: any) {
+      setError(err?.response?.data?.message || "Failed to send OTP");
       throw err;
     } finally {
       setIsLoading(false);
@@ -87,26 +75,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const register = async (email: string, otp: string) => {
     setError(null);
     setIsLoading(true);
-    console.log("Registering with email:", email, "and OTP:", otp);
-
     try {
-      const response = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, otp }),
-        credentials: "include",
-      });
-
-      console.log(response);
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message);
-      }
-
+      await axios.post("/auth/register", { email, otp });
       await checkAuth();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Registration failed");
+    } catch (err: any) {
+      setError(err?.response?.data?.message || "Registration failed");
       throw err;
     } finally {
       setIsLoading(false);
@@ -116,21 +89,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-        credentials: "include",
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message);
-      }
-
+      await axios.post("/auth/login", { email, password });
       await checkAuth();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed");
+    } catch (err: any) {
+      setError(err?.response?.data?.message || "Login failed");
       throw err;
     } finally {
       setIsLoading(false);
@@ -140,12 +102,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const logout = async () => {
     setIsLoading(true);
     try {
-      await fetch("/api/auth/logout", {
-        method: "POST",
-        credentials: "include",
-      });
+      await axios.post("/auth/logout");
       setUser(null);
-    } catch (err) {
+    } catch {
       setError("Logout failed");
     } finally {
       setIsLoading(false);

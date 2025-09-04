@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import NoCarsFound from "@/components/NoCarsFound";
+import { formatPrice } from "@/lib/utils";
 
 // Animation Variants
 const cardListVariants = {
@@ -300,13 +301,16 @@ const CarSearchResult = () => {
                 </div>
 
                 <p className="text-xl sm:text-2xl font-bold text-gray-800 leading-none">
-                  {new Intl.NumberFormat("en-PK", {
-                    // Using en-PK for "Rs." based on target image
-                    style: "currency",
-                    currency: car.currency || "PKR",
-                    minimumFractionDigits: 0,
-                    maximumFractionDigits: 0,
-                  }).format(Number(car.price))}
+                  {(() => {
+                    const priceInEur = formatPrice({
+                      price: car.price,
+                      rateToEur: car.rateToEur,
+                    });
+                    return priceInEur === "€0.00"
+                      ? "Rate Conversion Issue"
+                      : priceInEur;
+                  })()}
+
                   <span className="text-[0.7rem] sm:text-xs font-normal text-gray-500 ml-1">
                     {" "}
                     total

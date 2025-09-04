@@ -10,6 +10,8 @@ import { HotelCard } from "../../types/flights";
 import { HotelModel } from "./hotels/hotel.model";
 import { carBookingValidator } from "./car/car.validator";
 import { CarBookingModel } from "./car/car.model";
+import axios from "axios";
+import { getConversionRateToEUR } from "../../utils/general.utils";
 
 const getFlightDetails = async (
   req: Request,
@@ -48,6 +50,7 @@ const getFlightDetails = async (
       departureDate,
       adults,
       max: 5,
+      currencyCode: "EUR",
     };
 
     if (returnDate) params.returnDate = returnDate;
@@ -62,43 +65,64 @@ const getFlightDetails = async (
       });
     }
 
-    const mappedFlights = response.data.map((offer: any) => {
-      const itinerary = offer.itineraries[0];
-      const segment = itinerary.segments[0];
-      const lastSegment = itinerary.segments[itinerary.segments.length - 1];
-      const traveler = offer.travelerPricings[0];
+    const mappedFlights = await Promise.all(
+      response.data.map(async (offer: any) => {
+        const itinerary = offer.itineraries?.[0] ?? null;
+        const segments = itinerary?.segments ?? [];
+        const firstSegment = segments[0] ?? null;
+        const lastSegment = segments[segments.length - 1] ?? null;
+        const traveler = offer.travelerPricings?.[0] ?? null;
+        const fareSegment = traveler?.fareDetailsBySegment?.[0] ?? null;
 
-      const formattedArrivalTime = DateTime.fromISO(lastSegment.arrival.at, {
-        zone: userTimezone,
-      }).toFormat("cccc, dd LLL yyyy, hh:mm a");
+        const formattedArrivalTime = lastSegment?.arrival?.at
+          ? DateTime.fromISO(lastSegment.arrival.at, {
+              zone: userTimezone,
+            }).toFormat("cccc, dd LLL yyyy, hh:mm a")
+          : null;
 
-      const formattedDepartureTime = DateTime.fromISO(segment.departure.at, {
-        zone: userTimezone,
-      }).toFormat("cccc, dd LLL yyyy, hh:mm a");
+        const formattedDepartureTime = firstSegment?.departure?.at
+          ? DateTime.fromISO(firstSegment.departure.at, {
+              zone: userTimezone,
+            }).toFormat("cccc, dd LLL yyyy, hh:mm a")
+          : null;
 
-      const duration = Duration.fromISO(itinerary.duration);
-      const readable = `${duration.hours}h ${duration.minutes}m`;
+        const duration = itinerary?.duration
+          ? Duration.fromISO(itinerary.duration)
+          : null;
+        const readableDuration = duration
+          ? `${duration.hours ?? 0}h ${duration.minutes ?? 0}m`
+          : null;
 
-      return {
-        airline: segment.carrierCode,
-        from: segment.departure.iataCode,
-        to: lastSegment.arrival.iataCode,
-        departureTime: formattedDepartureTime,
-        arrivalTime: formattedArrivalTime,
-        totalDuration: readable,
-        numberOfStops: itinerary.segments.length - 1,
-        cabinClass: traveler.fareDetailsBySegment[0].cabin,
-        totalPrice: traveler.price.total,
-        currency: traveler.price.currency,
-      };
-    });
+        const from = traveler?.price?.currency ?? offer.price?.currency;
+        const rateToEur = await getConversionRateToEUR(from);
+
+        return {
+          airlineName: firstSegment?.operating?.carrierName ?? null,
+          airlineCode: firstSegment?.carrierCode ?? null,
+          flightNumber: firstSegment?.number ?? null,
+          from: firstSegment?.departure?.iataCode ?? null,
+          to: lastSegment?.arrival?.iataCode ?? null,
+          departureTime: formattedDepartureTime,
+          arrivalTime: formattedArrivalTime,
+          totalDuration: readableDuration,
+          numberOfStops: segments.length > 0 ? segments.length - 1 : null,
+          cabinClass: fareSegment?.cabin ?? null,
+          checkedBags: fareSegment?.includedCheckedBags?.quantity ?? null,
+          cabinBags: fareSegment?.includedCabinBags?.quantity ?? null,
+          totalPrice: traveler?.price?.total ?? offer.price?.total ?? null,
+          currency: traveler?.price?.currency ?? offer.price?.currency ?? null,
+          isUpsellOffer: offer.isUpsellOffer ?? false,
+          rateToEur,
+          lastTicketingDate: offer.lastTicketingDate ?? null,
+        };
+      })
+    );
 
     res.status(200).json({
       success: true,
       data: mappedFlights,
     });
 
-    // Background DB logging (non-blocking)
     res.on("finish", async () => {
       try {
         await FlightModel.create({
@@ -150,7 +174,6 @@ const getHotelDetails = async (
         cityCode: destination,
       });
     } catch (err) {
-      console.log(err);
       return res.status(502).json({
         success: false,
         message: "Failed to fetch hotel locations from external provider.",
@@ -167,10 +190,9 @@ const getHotelDetails = async (
     }
 
     const hotelIds = hotels
-      .slice(0, 5)
+      .slice(0, 25)
       .map((hotel: any) => hotel.hotelId)
       .join(",");
-
     let offersResponse;
     try {
       offersResponse = await amadeus.shopping.hotelOffersSearch.get({
@@ -196,46 +218,51 @@ const getHotelDetails = async (
       });
     }
 
-    const mappedHotels: HotelCard[] = offersResponse.data.map((offer: any) => {
-      const hotelName = offer.hotel.name;
-      const cityCode = offer.hotel.cityCode;
+    const mappedHotels = await Promise.all(
+      offersResponse.data.map(async (offer: any) => {
+        const hotelName = offer.hotel.name;
+        const cityCode = offer.hotel.cityCode;
 
-      const room = offer.offers[0].room;
-      const roomCategory = room.typeEstimated.category || "Not specified";
-      const bedInfo = `${room.typeEstimated.beds || "N/A"} ${
-        room.typeEstimated.bedType || "Bed"
-      }(s)`;
-      const description = room.description?.text || "No description provided";
+        const room = offer.offers[0].room;
+        const roomCategory = room.typeEstimated.category || "Not specified";
+        const bedInfo = `${room.typeEstimated.beds || "N/A"} ${
+          room.typeEstimated.bedType || "Bed"
+        }(s)`;
+        const description = room.description?.text || "No description provided";
 
-      const checkInDate = offer.offers[0].checkInDate;
-      const checkOutDate = offer.offers[0].checkOutDate;
+        const checkInDate = offer.offers[0].checkInDate;
+        const checkOutDate = offer.offers[0].checkOutDate;
 
-      const price = offer.offers[0].price.total;
-      const currency = offer.offers[0].price.currency;
+        const price = offer.offers[0].price.total;
+        const currency = offer.offers[0].price.currency;
 
-      const refundable =
-        offer.offers[0].policies?.refundable?.cancellationRefund ===
-        "REFUNDABLE_UP_TO_DEADLINE";
+        const refundable =
+          offer.offers[0].policies?.refundable?.cancellationRefund ===
+          "REFUNDABLE_UP_TO_DEADLINE";
 
-      const bedType = room.typeEstimated.bedType || "N/A";
+        const bedType = room.typeEstimated.bedType || "N/A";
 
-      const guests = offer.offers[0].guests?.adults || 1;
+        const guests = offer.offers[0].guests?.adults || 1;
+        const from = currency;
+        const rateToEur = await getConversionRateToEUR(from);
 
-      return {
-        hotelName,
-        cityCode,
-        roomCategory,
-        bedInfo,
-        description,
-        checkIn: checkInDate,
-        checkOut: checkOutDate,
-        price,
-        currency,
-        refundable,
-        guests,
-        bedType,
-      };
-    });
+        return {
+          hotelName,
+          cityCode,
+          roomCategory,
+          bedInfo,
+          description,
+          checkIn: checkInDate,
+          checkOut: checkOutDate,
+          price,
+          currency,
+          refundable,
+          guests,
+          bedType,
+          rateToEur,
+        };
+      })
+    );
 
     try {
       await HotelModel.insertOne({
@@ -284,13 +311,38 @@ const getCarDetails = async (
       dropOffTime,
     } = parsed.data;
 
-    const pickupDateTime = new Date(`${pickUpDate}T${pickUpTime}:00`);
-    const dropoffDateTime = new Date(`${dropOffDate}T${dropOffTime}:00`);
+    const pickupDateTime: any = new Date(`${pickUpDate}T${pickUpTime}:00`);
+    const dropoffDateTime: any = new Date(`${dropOffDate}T${dropOffTime}:00`);
 
-    if (pickupDateTime >= dropoffDateTime) {
+    if (isNaN(pickupDateTime.getTime()) || isNaN(dropoffDateTime.getTime())) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid pick-up or drop-off date/time format.",
+      });
+    }
+
+    if (pickupDateTime.getTime() >= dropoffDateTime.getTime()) {
       return res.status(400).json({
         success: false,
         message: "Pick-up date/time must be earlier than drop-off date/time.",
+      });
+    }
+
+    const durationInMs = dropoffDateTime - pickupDateTime;
+    const durationInMinutes = durationInMs / (1000 * 60);
+
+    if (durationInMinutes < 60) {
+      return res.status(400).json({
+        success: false,
+        message: "Minimum rental duration is 1 hour.",
+      });
+    }
+
+    const maxRentalDays = 30;
+    if (durationInMinutes > maxRentalDays * 24 * 60) {
+      return res.status(400).json({
+        success: false,
+        message: `Maximum rental duration is ${maxRentalDays} days.`,
       });
     }
 
@@ -305,18 +357,48 @@ const getCarDetails = async (
         startDateTime: formattedPickup,
         endDateTime: formattedDropoff,
         transferType: "PRIVATE",
+        currencyCode: "EUR",
       };
 
       availabilityResponse = await amadeus.shopping.transferOffers.post(
         transferSearchBody
       );
     } catch (err: any) {
-      console.error("Error calling Amadeus API:", err?.message || err);
-      return res.status(502).json({
+      const statusCode = err?.response?.statusCode || 502;
+      const errorCode = err?.code || null;
+      const errorMessage =
+        err?.description || err?.message || "Unknown error occurred";
+
+      console.error("Amadeus API Error:", {
+        code: errorCode,
+        status: statusCode,
+        message: errorMessage,
+      });
+
+      let clientMessage =
+        "Unable to fetch transfer offers. Please try again later.";
+
+      if (statusCode === 400) {
+        clientMessage =
+          "Bad request sent to transfer provider. Please check your pickup/dropoff info.";
+      } else if (statusCode === 401 || statusCode === 403) {
+        clientMessage =
+          "Authentication with transfer provider failed. Please contact support.";
+      } else if (statusCode === 429) {
+        clientMessage =
+          "Rate limit exceeded with transfer provider. Please try again after a short while.";
+      } else if (statusCode >= 500 && statusCode < 600) {
+        clientMessage =
+          "Transfer provider is currently unavailable. Please try again shortly.";
+      }
+
+      return res.status(statusCode).json({
         success: false,
-        message:
-          "Failed to fetch transfer offers from provider. Please try again later.",
-        error: err?.message || "Unknown error",
+        message: clientMessage,
+        error: {
+          code: errorCode,
+          detail: errorMessage,
+        },
       });
     }
 
@@ -329,29 +411,35 @@ const getCarDetails = async (
       });
     }
 
-    const carsDetails = availableCars.map((car: any) => {
-      const vehicle = car.vehicle || {};
-      const provider = car.serviceProvider || {};
-      const quotation = car.converted || car.quotation || {};
-      const seats = vehicle.seats?.[0]?.count ?? 0;
+    const carsDetails = await Promise.all(
+      availableCars.map(async (car: any) => {
+        const vehicle = car.vehicle || {};
+        const provider = car.serviceProvider || {};
+        const quotation = car.converted || car.quotation || {};
+        const seats = vehicle.seats?.[0]?.count ?? 0;
+        const from = quotation.currencyCode;
 
-      return {
-        id: car.id,
-        providerName: provider.name || "Unknown Provider",
-        providerLogo: provider.logoUrl || "",
-        vehicleImage: vehicle.imageURL || "",
-        vehicleDescription:
-          vehicle.description || "Vehicle description not available",
-        seatCount: seats,
-        startTime: car.start?.dateTime || "",
-        startLocation: car.start?.locationCode || "Unknown",
-        endTime: car.end?.dateTime || "",
-        endLocation: car.end?.locationCode || "Unknown",
-        price: quotation.monetaryAmount || "0",
-        currency: quotation.currencyCode || "EUR",
-        distanceKm: car.distance?.value || 0,
-      };
-    });
+        const rateToEur = await getConversionRateToEUR(from);
+
+        return {
+          id: car.id,
+          providerName: provider.name || "Unknown Provider",
+          providerLogo: provider.logoUrl || "",
+          vehicleImage: vehicle.imageURL || "",
+          vehicleDescription:
+            vehicle.description || "Vehicle description not available",
+          seatCount: seats,
+          startTime: car.start?.dateTime || "",
+          startLocation: car.start?.locationCode || "Unknown",
+          endTime: car.end?.dateTime || "",
+          endLocation: car.end?.locationCode || "Unknown",
+          price: quotation.monetaryAmount || "0",
+          rateToEur,
+          currency: quotation.currencyCode || "EUR",
+          distanceKm: car.distance?.value || 0,
+        };
+      })
+    );
 
     try {
       await CarBookingModel.insertOne({

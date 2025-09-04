@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { motion } from "framer-motion";
 import { SwapButton } from "@/pages/home/main/home-search/SwapButton";
@@ -16,6 +14,7 @@ import { PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { LocationSearchInput, type Location } from "./search-input-field";
 import { getUserLocation } from "@/lib/getLocation";
 import { useAirports } from "@/store/airportStore";
+import { useTranslation } from "react-i18next"; // Import useTranslation
 
 // Types
 interface TravelerDetails {
@@ -78,6 +77,8 @@ const itemVariants = {
 
 // Custom hooks for form logic
 const useFormValidation = () => {
+  const { t } = useTranslation("flight_search");
+
   const today = useMemo(() => {
     const date = new Date();
     date.setHours(0, 0, 0, 0);
@@ -90,12 +91,12 @@ const useFormValidation = () => {
 
       // Origin validation
       if (!formData.origin?.code) {
-        errors.origin = "Please select an origin airport";
+        errors.origin = t("validation_origin_required");
       }
 
       // Destination validation
       if (!formData.destination?.code) {
-        errors.destination = "Please select a destination airport";
+        errors.destination = t("validation_destination_required");
       }
 
       // Same origin/destination validation
@@ -104,14 +105,14 @@ const useFormValidation = () => {
         formData.destination?.code &&
         formData.origin.code === formData.destination.code
       ) {
-        errors.destination = "Origin and destination cannot be the same";
+        errors.destination = t("validation_origin_destination_same");
       }
 
       // Departure date validation
       if (!formData.departureDate) {
-        errors.departureDate = "Departure date is required";
+        errors.departureDate = t("validation_departure_date_required");
       } else if (formData.departureDate < today) {
-        errors.departureDate = "Departure date cannot be in the past";
+        errors.departureDate = t("validation_departure_date_past");
       }
 
       // Return date validation
@@ -120,18 +121,20 @@ const useFormValidation = () => {
         formData.departureDate &&
         formData.returnDate < formData.departureDate
       ) {
-        errors.returnDate = "Return date cannot be before departure date";
+        errors.returnDate = t("validation_return_date_before_departure");
       }
 
       return errors;
     },
-    [today]
+    [today, t] // Add t to dependency array
   );
 
   return { validateForm, today };
 };
 
 const useTravelerManagement = () => {
+  const { t } = useTranslation("flight_search"); // Use translation hook here
+
   const [adults, setAdults] = useState(MIN_ADULTS);
   const [children, setChildren] = useState<number[]>([]);
 
@@ -171,12 +174,10 @@ const useTravelerManagement = () => {
   );
 
   const travelerSummary = useMemo(() => {
-    const adultText = `${adults} Adult${adults > 1 ? "s" : ""}`;
-    const childText = `${children.length} Child${
-      children.length !== 1 ? "ren" : ""
-    }`;
+    const adultText = t("adult_count", { count: adults });
+    const childText = t("child_count", { count: children.length });
     return `${adultText}, ${childText}`;
-  }, [adults, children.length]);
+  }, [adults, children.length, t]);
 
   return {
     adults,
@@ -196,6 +197,8 @@ const useTravelerManagement = () => {
 };
 
 export default function HomeSearchForm() {
+  const { t } = useTranslation("flight_search"); // Use translation hook here
+
   const navigate = useNavigate();
   const { validateForm, today } = useFormValidation();
   const {
@@ -214,7 +217,6 @@ export default function HomeSearchForm() {
     canIncrementAdults,
   } = useTravelerManagement();
 
-  // Form state
   const [formData, setFormData] = useState<FormData>({
     origin: null,
     destination: null,
@@ -229,24 +231,20 @@ export default function HomeSearchForm() {
   const [rotated, setRotated] = useState(false);
   const [isOpen, setIsOpen] = useState<PopoverState>({ guests: false });
 
-  // Refs
   const departureRef = useRef<HTMLButtonElement>(null);
   const returnRef = useRef<HTMLButtonElement>(null);
 
-  // Store hooks
   const fetchFlights = useFlightStore((state) => state.fetchFlights);
   const getNearbyAirports = useAirports((state) => state.nearby);
   const setNearByAirports = useAirports((state) => state.setNearByAirports);
 
   useEffect(() => {
-    // Only set returnDate if it's still undefined
     setFormData((prev) => ({
       ...prev,
       returnDate:
         prev.returnDate ?? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     }));
   }, []);
-  // Initialize user location and nearby airports
   useEffect(() => {
     let mounted = true;
 
@@ -260,8 +258,8 @@ export default function HomeSearchForm() {
       } catch (error) {
         console.error("Failed to get user location:", error);
         if (mounted) {
-          toast("Location access failed", {
-            description: "Please select airports manually.",
+          toast(t("location_access_failed_toast_title"), {
+            description: t("location_access_failed_toast_description"),
             duration: 3000,
           });
         }
@@ -273,14 +271,12 @@ export default function HomeSearchForm() {
     return () => {
       mounted = false;
     };
-  }, [getNearbyAirports, setNearByAirports]);
+  }, [getNearbyAirports, setNearByAirports, t]);
 
-  // Event handlers
   const handleLocationChange = useCallback(
     (field: "origin" | "destination") => (location: Location | null) => {
       setFormData((prev) => ({ ...prev, [field]: location }));
 
-      // Clear validation errors for this field
       if (errors[field]) {
         setErrors((prev) => ({ ...prev, [field]: undefined }));
       }
@@ -293,7 +289,6 @@ export default function HomeSearchForm() {
       setFormData((prev) => {
         const newData = { ...prev, [field]: date };
 
-        // If departure date is changed and is after return date, clear return date
         if (
           field === "departureDate" &&
           date &&
@@ -307,7 +302,6 @@ export default function HomeSearchForm() {
         return newData;
       });
 
-      // Clear error when user selects a date
       if (errors[field]) {
         setErrors((prev) => ({ ...prev, [field]: undefined }));
       }
@@ -364,20 +358,23 @@ export default function HomeSearchForm() {
       if (Object.keys(validationErrors).length > 0) {
         setErrors(validationErrors);
 
-        toast("Please fix the errors in the form", {
-          description:
-            "Make sure to provide valid input for all required fields.",
-          icon: <AlertCircle className="h-4 w-4" />,
+        toast(t("validation_fix_errors_toast_title"), {
+          description: t("validation_fix_errors_toast_description"),
+          descriptionClassName: "text-sm text-black",
+
+          icon: <AlertCircle className="h-4 w-4 text-red-500" />,
+          className: "bg-red-100 border border-red-300 text-red-800",
           action: (
             <Button
               variant="link"
-              className="text-black hover:text-black"
+              className="text-red-800 hover:text-red-900"
               onClick={() => scrollToFirstError(validationErrors)}
             >
-              Fix it
+              {t("validation_fix_it_button")}
             </Button>
           ),
         });
+
         return;
       }
 
@@ -397,20 +394,22 @@ export default function HomeSearchForm() {
         };
 
         await fetchFlights(payload);
-        navigate("/flight/search");
+        navigate("/flights/search");
       } catch (error) {
         console.error("Flight search failed:", error);
 
         const errorMessage =
-          error instanceof Error ? error.message : "Unknown error occurred";
+          error instanceof Error
+            ? error.message
+            : t("flight_search_failed_toast_description_unknown"); // Translate unknown error
 
-        toast("Flight search failed", {
+        toast(t("flight_search_failed_toast_title"), {
           description: errorMessage,
           icon: <AlertCircle className="h-4 w-4" />,
           duration: 5000,
         });
 
-        setErrors({ general: "Flight search failed. Please try again." });
+        setErrors({ general: t("flight_search_failed_general_error") });
       } finally {
         setIsLoading(false);
       }
@@ -422,6 +421,7 @@ export default function HomeSearchForm() {
       fetchFlights,
       navigate,
       scrollToFirstError,
+      t, // Add t to dependency array
     ]
   );
 
@@ -434,7 +434,7 @@ export default function HomeSearchForm() {
       className="bg-dark-blue p-6 md:p-8 rounded-3xl text-white max-w-6xl mx-auto shadow-lg"
       noValidate
       role="search"
-      aria-label="Flight search form"
+      aria-label={t("form_title")}
     >
       {/* General error display */}
       {errors.general && (
@@ -453,8 +453,8 @@ export default function HomeSearchForm() {
         <motion.div className="relative md:col-span-3" variants={itemVariants}>
           <LocationSearchInput
             id="origin"
-            label="From"
-            placeholder="Where are you flying from?"
+            label={t("origin_label")}
+            placeholder={t("origin_placeholder")}
             value={formData.origin}
             onChange={handleLocationChange("origin")}
             error={errors.origin}
@@ -466,7 +466,7 @@ export default function HomeSearchForm() {
               rotated={rotated}
               onClick={handleSwap}
               // disabled={isLoading}
-              aria-label="Swap origin and destination"
+              aria-label={t("swap_locations_aria_label")}
             />
           </div>
         </motion.div>
@@ -475,8 +475,8 @@ export default function HomeSearchForm() {
         <motion.div className="md:col-span-3" variants={itemVariants}>
           <LocationSearchInput
             id="destination"
-            label="To"
-            placeholder="Where are you flying to?"
+            label={t("destination_label")}
+            placeholder={t("destination_placeholder")}
             value={formData.destination}
             onChange={handleLocationChange("destination")}
             className="md:pl-4 py-0.5 bg-white"
@@ -489,7 +489,7 @@ export default function HomeSearchForm() {
         <motion.div className="md:col-span-2" variants={itemVariants}>
           <DateInputField
             id="departureDate"
-            label="Departure"
+            label={t("departure_label")}
             value={formData.departureDate}
             onChange={handleDateChange("departureDate")}
             error={errors.departureDate}
@@ -504,8 +504,8 @@ export default function HomeSearchForm() {
         <motion.div className="md:col-span-2" variants={itemVariants}>
           <DateInputField
             id="returnDate"
-            label="Return"
-            placeholder="One way?"
+            label={t("return_label")}
+            placeholder={t("return_placeholder_oneway")}
             value={formData.returnDate}
             onChange={handleDateChange("returnDate")}
             className="md:rounded-b-none"
@@ -529,7 +529,9 @@ export default function HomeSearchForm() {
                 variant="outline"
                 className="w-full justify-start bg-white text-black h-17 md:col-span-1 rounded-none rounded-b-2xl md:rounded-b-none md:rounded-r-2xl"
                 disabled={isLoading}
-                aria-label={`Select travelers: ${travelerSummary}`}
+                aria-label={t("travelers_select_aria_label", {
+                  summary: travelerSummary,
+                })}
               >
                 {travelerSummary}
               </Button>
@@ -538,9 +540,11 @@ export default function HomeSearchForm() {
               <div className="space-y-4">
                 {/* Adults */}
                 <div>
-                  <h3 className="font-medium mb-2">Adults</h3>
+                  <h3 className="font-medium mb-2">{t("adults_heading")}</h3>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Age 12+</span>
+                    <span className="text-sm text-gray-600">
+                      {t("adults_age_info")}
+                    </span>
                     <div className="flex items-center gap-2">
                       <Button
                         size="sm"
@@ -548,7 +552,7 @@ export default function HomeSearchForm() {
                         className="h-8 w-8 p-0"
                         onClick={decrementAdults}
                         disabled={!canDecrementAdults}
-                        aria-label="Decrease adults"
+                        aria-label={t("decrease_adults_aria_label")}
                       >
                         -
                       </Button>
@@ -559,7 +563,7 @@ export default function HomeSearchForm() {
                         className="h-8 w-8 p-0"
                         onClick={incrementAdults}
                         disabled={!canIncrementAdults}
-                        aria-label="Increase adults"
+                        aria-label={t("increase_adults_aria_label")}
                       >
                         +
                       </Button>
@@ -569,20 +573,22 @@ export default function HomeSearchForm() {
 
                 {/* Children */}
                 <div>
-                  <h3 className="font-medium mb-2">Children</h3>
+                  <h3 className="font-medium mb-2">{t("children_heading")}</h3>
                   <div className="space-y-2">
                     {children.map((age, index) => (
                       <div
                         key={index}
                         className="flex justify-between items-center"
                       >
-                        <span className="text-sm">Child {index + 1}</span>
+                        <span className="text-sm">
+                          {t("child_label", { index: index + 1 })}
+                        </span>
                         <div className="flex items-center gap-2">
                           <label
                             htmlFor={`child-age-${index}`}
                             className="sr-only"
                           >
-                            Age for child {index + 1}
+                            {t("child_age_aria_label", { index: index + 1 })}
                           </label>
                           <input
                             id={`child-age-${index}`}
@@ -595,7 +601,9 @@ export default function HomeSearchForm() {
                             }
                             className="w-16 p-1 rounded border text-black text-center"
                           />
-                          <span className="text-xs text-gray-500">years</span>
+                          <span className="text-xs text-gray-500">
+                            {t("child_age_unit")}
+                          </span>
                         </div>
                       </div>
                     ))}
@@ -608,7 +616,7 @@ export default function HomeSearchForm() {
                       onClick={addChild}
                       disabled={!canAddChild}
                     >
-                      + Add Child
+                      {t("add_child_button")}
                     </Button>
                     <Button
                       size="sm"
@@ -617,13 +625,13 @@ export default function HomeSearchForm() {
                       onClick={removeChild}
                       disabled={!canRemoveChild}
                     >
-                      - Remove
+                      {t("remove_child_button")}
                     </Button>
                   </div>
                 </div>
 
                 <Button className="w-full mt-4" onClick={applyGuestSelection}>
-                  Apply ({travelerSummary})
+                  {t("apply_button", { summary: travelerSummary })}
                 </Button>
               </div>
             </PopoverContent>
@@ -636,19 +644,18 @@ export default function HomeSearchForm() {
         <motion.div className="md:col-span-1 mt-1" variants={itemVariants}>
           <SearchButton
             isLoading={isLoading}
-            // disabled={isLoading}
-            aria-label="Search for flights"
-          />
+            aria_label={t("Search Flight")}
+          ></SearchButton>
         </motion.div>
       </div>
 
-      {/* Flight Options */}
       <FlightOptions
         nearbyAirports={formData.nearbyAirports}
         directOnly={formData.directFlightsOnly}
         onToggleNearby={handleCheckboxChange("nearbyAirports")}
         onToggleDirect={handleCheckboxChange("directFlightsOnly")}
-        // disabled={isLoading}
+        directFlightsOnlyText={t("direct_flights")}
+        nearbyAirportsText={t("include_airports")}
       />
     </motion.form>
   );
