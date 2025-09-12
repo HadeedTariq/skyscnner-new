@@ -1,6 +1,4 @@
-import { translationFormatter } from "@/lib/utils";
 import { CarIcon, Globe, LucideHotel } from "lucide-react";
-import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 
 interface ServiceButtonProps {
@@ -23,7 +21,6 @@ const ServiceButton = ({ icon, label, href }: ServiceButtonProps) => {
 };
 
 const ServiceOptionBar = () => {
-  const { t } = useTranslation();
   const services = [
     { icon: <LucideHotel />, label: "Hotels", href: "/hotels" },
     { icon: <CarIcon />, label: "Car hire", href: "/cars" },
@@ -36,7 +33,7 @@ const ServiceOptionBar = () => {
         <ServiceButton
           key={index}
           icon={service.icon}
-          label={t(translationFormatter(service.label))}
+          label={service.label}
           href={service.href}
         />
       ))}
