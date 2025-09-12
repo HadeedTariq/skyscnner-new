@@ -15,7 +15,7 @@ export default defineConfig({
     host: true,
     proxy: {
       "/api": {
-        target: "https://sky-scanner-backend.vercel.app/",
+        target: "https://easyfligth.com/api",
         changeOrigin: true,
         secure: true,
         // rewrite: (path) => path.replace(/^\/api/, ""),
