@@ -15,7 +15,7 @@ export default defineConfig({
     host: true,
     proxy: {
       "/api": {
-        target: "https://easyfligth.com/api",
+        target: "https://api.easyfligth.com/api",
         changeOrigin: true,
         secure: true,
         // rewrite: (path) => path.replace(/^\/api/, ""),
