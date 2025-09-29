@@ -431,7 +431,7 @@ export default function HomeSearchForm() {
       initial="hidden"
       animate="visible"
       variants={containerVariants}
-      className="bg-dark-blue p-6 md:p-8 rounded-3xl text-white max-w-6xl mx-auto shadow-lg"
+      className="bg-dark-blue p-6 max-[760px]:p-8 rounded-3xl text-white max-w-6xl mx-auto shadow-lg "
       noValidate
       role="search"
       aria-label={t("form_title")}

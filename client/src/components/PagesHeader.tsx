@@ -80,7 +80,7 @@ const PagesHeader = ({ image, heading, children }: PagesHeaderProps) => {
   return (
     <>
       <div className="py-12 bg-dark-blue"></div>
-      <div className="relative h-[600px] w-full   overflow-hidden shadow-xl">
+      <div className="relative h-[600px] max-[780px]:h-[780px] w-full  overflow-hidden shadow-xl">
         {/* Background Image with enhanced animation */}
         <motion.div
           className="absolute inset-0 z-0 bg-cover bg-center"
@@ -107,7 +107,7 @@ const PagesHeader = ({ image, heading, children }: PagesHeaderProps) => {
         >
           {heading && (
             <motion.h1
-              className="text-4xl md:text-6xl font-bold mb-6 tracking-tight"
+              className="text-4xl font-bold mb-6 tracking-tigh max-[800px]:mt-20"
               variants={headingVariants}
             >
               {heading}

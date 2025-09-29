@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import FormInput from "./components/FormInput";
 import useForm from "../../hooks/useForm";
 import { useAuth } from "@/context/AuthContext";
+import { toast } from "sonner";
 
 interface LoginFormValues {
   email: string;
@@ -42,7 +43,7 @@ const Login: React.FC = () => {
       await login(values.email, values.password);
       navigate("/profile");
     } catch (error) {
-      alert("Login failed. Please check your credentials.");
+      toast.error("Login failed. Please check your credentials.");
       console.log(error);
     }
   };

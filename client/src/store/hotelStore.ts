@@ -54,16 +54,19 @@ export const useHotelStore = create<HotelState>((set) => ({
         data: HotelData[];
       }>("/booking/hotel/unified-details", payload);
 
-      console.log("Hotel data fetched successfully:", response.data);
-
       set({ hotels: response.data.data, loading: false });
     } catch (error: any) {
-      toast.error(error.response.data.message || "Failed to fetch hotels", {});
+      toast.error(
+        error?.response?.data.message || "Failed to fetch hotels",
+        {}
+      );
       set({
         error: error.message || "Failed to fetch hotels",
         loading: false,
       });
       throw error;
+    } finally {
+      set({ loading: false });
     }
   },
 }));

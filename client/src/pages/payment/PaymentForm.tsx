@@ -154,7 +154,7 @@ export function PaymentForm() {
   return (
     <div className="mx-auto space-y-6">
       <div className="">
-        <div className="p-8">
+        <div className="py-8 px-6 max-[700px]:px-4">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="text-2xl font-bold text-gray-900">
@@ -587,7 +587,7 @@ export function PaymentForm() {
                               Processing Payment...
                             </div>
                           ) : (
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 text-sm">
                               <Lock className="h-4 w-4" />
                               Complete Secure Payment
                             </div>

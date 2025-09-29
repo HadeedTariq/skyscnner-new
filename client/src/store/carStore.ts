@@ -52,15 +52,13 @@ export const useCarStore = create<CarState>((set) => ({
         data: CarData[];
       }>("/booking/car/unified-details", payload);
 
-      console.log("Car data fetched successfully:", response.data);
-
       set({ cars: response.data.data, loading: false });
     } catch (error: any) {
       set({
-        error: error.message || "Failed to fetch cars",
+        error: error?.response?.data.message || "Failed to fetch cars",
         loading: false,
       });
-      toast.error(error.response.data.message || "Failed to fetch cars");
+      toast.error(error?.response?.data.message || "Failed to fetch cars");
       throw error;
     }
   },

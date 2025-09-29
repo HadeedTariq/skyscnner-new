@@ -82,8 +82,8 @@ const RegisterForm: React.FC = () => {
         });
         toast.success("OTP sent to your email");
       }
-    } catch (error) {
-      console.log(error);
+    } catch (error: any) {
+      toast.error(error?.response?.data.message || "Sonething went wrong");
     }
   };
 
